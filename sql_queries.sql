@@ -224,7 +224,41 @@ GROUP BY product_line
 ORDER BY avg_rating DESC;
 
 -- --------------------------------------------------------------------
+-- ---------------------------- Sales ---------------------------------
 -- --------------------------------------------------------------------
+
+-- Number of sales made in each time of the day per weekday 
+SELECT day_name, time_of_day, COUNT(*) AS sales_count
+FROM sales
+GROUP BY day_name, time_of_day
+ORDER BY FIELD(day_name, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'), time_of_day;
+
+-- Evenings experience the most sales
+
+-- Which of the customer types brings the most revenue?
+SELECT
+	customer_type,
+	SUM(total) AS total_revenue
+FROM sales
+GROUP BY customer_type
+ORDER BY total_revenue DESC;
+
+-- Which city has the largest tax/VAT percent?
+SELECT
+	city,
+    ROUND(AVG(VAT), 2) AS avg_tax_pct
+FROM sales
+GROUP BY city 
+ORDER BY avg_tax_pct DESC;
+
+-- Which customer type pays the most in VAT?
+SELECT
+	customer_type,
+	AVG(VAT) AS total_tax
+FROM sales
+GROUP BY customer_type
+ORDER BY total_tax;
+
 
 -- --------------------------------------------------------------------
 -- -------------------------- Customers -------------------------------
@@ -318,45 +352,6 @@ FROM sales
 GROUP BY branch, day_name
 ORDER BY branch, avg_rating DESC;
 
-
--- --------------------------------------------------------------------
--- --------------------------------------------------------------------
-
--- --------------------------------------------------------------------
--- ---------------------------- Sales ---------------------------------
--- --------------------------------------------------------------------
-
--- Number of sales made in each time of the day per weekday 
-SELECT day_name, time_of_day, COUNT(*) AS sales_count
-FROM sales
-GROUP BY day_name, time_of_day
-ORDER BY FIELD(day_name, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'), time_of_day;
-
--- Evenings experience the most sales
-
--- Which of the customer types brings the most revenue?
-SELECT
-	customer_type,
-	SUM(total) AS total_revenue
-FROM sales
-GROUP BY customer_type
-ORDER BY total_revenue DESC;
-
--- Which city has the largest tax/VAT percent?
-SELECT
-	city,
-    ROUND(AVG(VAT), 2) AS avg_tax_pct
-FROM sales
-GROUP BY city 
-ORDER BY avg_tax_pct DESC;
-
--- Which customer type pays the most in VAT?
-SELECT
-	customer_type,
-	AVG(VAT) AS total_tax
-FROM sales
-GROUP BY customer_type
-ORDER BY total_tax;
 
 -- --------------------------------------------------------------------
 -- --------------------------------------------------------------------
