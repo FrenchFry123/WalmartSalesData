@@ -86,6 +86,12 @@ SELECT
 	DISTINCT city
 FROM sales;
 
+-- or
+
+SELECT 
+	COUNT(DISTINCT city) as num_cities
+FROM sales;
+
 -- In which city is each branch?
 SELECT 
 	DISTINCT city,
@@ -101,8 +107,13 @@ SELECT
 	DISTINCT product_line
 FROM sales;
 
+-- or
 
--- What is the most selling product line
+SELECT 
+	COUNT(DISTINCT product_line) as num_product_lines
+FROM sales;
+
+-- What is the most selling product line?
 SELECT
 	SUM(quantity) as qty,
     product_line
@@ -110,7 +121,7 @@ FROM sales
 GROUP BY product_line
 ORDER BY qty DESC;
 
--- What is the most selling product line
+-- What is the most selling product line?
 SELECT
 	SUM(quantity) as qty,
     product_line
@@ -157,7 +168,7 @@ ORDER BY total_revenue;
 -- What product line had the largest VAT?
 SELECT
 	product_line,
-	AVG(tax_pct) as avg_tax
+	AVG(VAT) as avg_tax
 FROM sales
 GROUP BY product_line
 ORDER BY avg_tax DESC;
@@ -170,10 +181,12 @@ SELECT
 	AVG(quantity) AS avg_qnty
 FROM sales;
 
+-- Returns -> 5.51
+
 SELECT
 	product_line,
 	CASE
-		WHEN AVG(quantity) > 6 THEN "Good"
+		WHEN AVG(quantity) > 5.51 THEN "Good"
         ELSE "Bad"
     END AS remark
 FROM sales
@@ -181,13 +194,17 @@ GROUP BY product_line;
 
 
 -- Which branch sold more products than average product sold?
-SELECT 
-	branch, 
-    SUM(quantity) AS qnty
+
+SELECT branch, SUM(quantity) AS total_products_sold
 FROM sales
 GROUP BY branch
-HAVING SUM(quantity) > (SELECT AVG(quantity) FROM sales);
-
+HAVING SUM(quantity) > (
+    SELECT AVG(total_products_sold) FROM (
+        SELECT branch, SUM(quantity) AS total_products_sold
+        FROM sales
+        GROUP BY branch
+    ) AS avg_products_sold
+)
 
 -- What is the most common product line by gender
 SELECT
@@ -218,11 +235,22 @@ SELECT
 	DISTINCT customer_type
 FROM sales;
 
+--or
+
+SELECT 
+	COUNT(DISTINCT customer_type)
+FROM sales;
+
 -- How many unique payment methods does the data have?
 SELECT
 	DISTINCT payment
 FROM sales;
 
+-- or 
+
+SELECT 
+	COUNT(DISTINCT payment)
+FROM sales;
 
 -- What is the most common customer type?
 SELECT
@@ -235,7 +263,7 @@ ORDER BY count DESC;
 -- Which customer type buys the most?
 SELECT
 	customer_type,
-    COUNT(*)
+    SUM(quantity)
 FROM sales
 GROUP BY customer_type;
 
@@ -249,59 +277,46 @@ GROUP BY gender
 ORDER BY gender_cnt DESC;
 
 -- What is the gender distribution per branch?
-SELECT
-	gender,
-	COUNT(*) as gender_cnt
+SELECT branch, gender, COUNT(*) AS gender_count
 FROM sales
-WHERE branch = "C"
-GROUP BY gender
-ORDER BY gender_cnt DESC;
--- Gender per branch is more or less the same hence, I don't think has
--- an effect of the sales per branch and other factors.
+GROUP BY branch, gender
+ORDER BY branch, gender;
 
--- Which time of the day do customers give most ratings?
+-- Which time of the day do customers give the highest ratings?
 SELECT
 	time_of_day,
 	AVG(rating) AS avg_rating
 FROM sales
 GROUP BY time_of_day
 ORDER BY avg_rating DESC;
--- Looks like time of the day does not really affect the rating, its
--- more or less the same rating each time of the day.alter
 
-
--- Which time of the day do customers give most ratings per branch?
+-- Which time of the day do customers give the highest ratings per branch?
 SELECT
+	branch,
 	time_of_day,
 	AVG(rating) AS avg_rating
 FROM sales
-WHERE branch = "A"
-GROUP BY time_of_day
-ORDER BY avg_rating DESC;
--- Branch A and C are doing well in ratings, branch B needs to do a 
--- little more to get better ratings.
+GROUP BY branch, time_of_day
+ORDER BY branch, avg_rating DESC;
 
 
--- Which day fo the week has the best avg ratings?
+-- Which day of the week has the best avg ratings?
 SELECT
 	day_name,
 	AVG(rating) AS avg_rating
 FROM sales
 GROUP BY day_name 
 ORDER BY avg_rating DESC;
--- Mon, Tue and Friday are the top best days for good ratings
--- why is that the case, how many sales are made on these days?
-
-
+-- Monday, Friday, and Sunday
 
 -- Which day of the week has the best average ratings per branch?
-SELECT 
+SELECT
+	branch,
 	day_name,
-	COUNT(day_name) total_sales
+	AVG(rating) as avg_rating
 FROM sales
-WHERE branch = "C"
-GROUP BY day_name
-ORDER BY total_sales DESC;
+GROUP BY branch, day_name
+ORDER BY branch, avg_rating DESC;
 
 
 -- --------------------------------------------------------------------
@@ -312,15 +327,12 @@ ORDER BY total_sales DESC;
 -- --------------------------------------------------------------------
 
 -- Number of sales made in each time of the day per weekday 
-SELECT
-	time_of_day,
-	COUNT(*) AS total_sales
+SELECT day_name, time_of_day, COUNT(*) AS sales_count
 FROM sales
-WHERE day_name = "Sunday"
-GROUP BY time_of_day 
-ORDER BY total_sales DESC;
--- Evenings experience most sales, the stores are 
--- filled during the evening hours
+GROUP BY day_name, time_of_day
+ORDER BY FIELD(day_name, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'), time_of_day;
+
+-- Evenings experience the most sales
 
 -- Which of the customer types brings the most revenue?
 SELECT
@@ -328,12 +340,12 @@ SELECT
 	SUM(total) AS total_revenue
 FROM sales
 GROUP BY customer_type
-ORDER BY total_revenue;
+ORDER BY total_revenue DESC;
 
 -- Which city has the largest tax/VAT percent?
 SELECT
 	city,
-    ROUND(AVG(tax_pct), 2) AS avg_tax_pct
+    ROUND(AVG(VAT), 2) AS avg_tax_pct
 FROM sales
 GROUP BY city 
 ORDER BY avg_tax_pct DESC;
@@ -341,7 +353,7 @@ ORDER BY avg_tax_pct DESC;
 -- Which customer type pays the most in VAT?
 SELECT
 	customer_type,
-	AVG(tax_pct) AS total_tax
+	AVG(VAT) AS total_tax
 FROM sales
 GROUP BY customer_type
 ORDER BY total_tax;
